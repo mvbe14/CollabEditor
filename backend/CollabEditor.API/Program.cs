@@ -9,7 +9,10 @@ var builder = WebApplication.CreateBuilder(args);
 const string ReactCorsPolicy = "ReactCorsPolicy";
 var allowedCorsOrigins = builder.Configuration["Cors:AllowedOrigins"]
     ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-    ?? [];
+    .Select(NormalizeOrigin)
+    .Where(origin => !string.IsNullOrWhiteSpace(origin))
+    .ToHashSet(StringComparer.OrdinalIgnoreCase)
+    ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
 // Add services to the container.
 
@@ -57,9 +60,13 @@ builder.Services.AddCors(options =>
     options.AddPolicy(ReactCorsPolicy, policy =>
     {
         policy.SetIsOriginAllowed(origin =>
-                allowedCorsOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase) ||
-                (builder.Environment.IsDevelopment() && origin == "http://localhost:5173") ||
-                IsVercelPreviewOrigin(origin))
+        {
+            var normalizedOrigin = NormalizeOrigin(origin);
+
+            return allowedCorsOrigins.Contains(normalizedOrigin) ||
+                   (builder.Environment.IsDevelopment() && normalizedOrigin == "http://localhost:5173") ||
+                   IsVercelPreviewOrigin(normalizedOrigin);
+        })
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -96,16 +103,15 @@ app.MapControllers();
 app.MapHub<DocumentHub>("/hubs/document");
 
 app.Run();
+static string NormalizeOrigin(string origin)
+{
+    return origin.Trim().TrimEnd('/');
+}
+
 static bool IsVercelPreviewOrigin(string origin)
 {
-    if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
-    {
-        return false;
-    }
-
-    return uri.Scheme == Uri.UriSchemeHttps &&
-           uri.Host.StartsWith("collab-editor-", StringComparison.OrdinalIgnoreCase) &&
-           uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase);
+    return origin.StartsWith("https://collab-editor-", StringComparison.OrdinalIgnoreCase) &&
+           origin.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase);
 }
 
 
