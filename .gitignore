@@ -1,0 +1,24 @@
+﻿# .NET
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Node / React
+node_modules/
+dist/
+.env
+.env.local
+
+# Logs
+*.log
+
+# IDE / OS
+.vscode/
+.DS_Store
+
+# Secrets
+appsettings.Production.json
+backend/CollabEditor.API/appsettings.json
+backend/CollabEditor.API/appsettings.Development.json
