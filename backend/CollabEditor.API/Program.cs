@@ -1,4 +1,4 @@
-﻿using CollabEditor.API.Data;
+using CollabEditor.API.Data;
 using CollabEditor.API.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +7,9 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 const string ReactCorsPolicy = "ReactCorsPolicy";
+var allowedCorsOrigins = builder.Configuration["Cors:AllowedOrigins"]
+    ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    ?? [];
 
 // Add services to the container.
 
@@ -53,8 +56,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy(ReactCorsPolicy, policy =>
     {
-        // Allow the React dev server origin, any header and method, and credentials for SignalR
-        policy.WithOrigins("http://localhost:5173")
+        policy.SetIsOriginAllowed(origin =>
+                allowedCorsOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase) ||
+                (builder.Environment.IsDevelopment() && origin == "http://localhost:5173") ||
+                IsVercelPreviewOrigin(origin))
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -91,5 +96,16 @@ app.MapControllers();
 app.MapHub<DocumentHub>("/hubs/document");
 
 app.Run();
+static bool IsVercelPreviewOrigin(string origin)
+{
+    if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+    {
+        return false;
+    }
+
+    return uri.Scheme == Uri.UriSchemeHttps &&
+           uri.Host.StartsWith("collab-editor-", StringComparison.OrdinalIgnoreCase) &&
+           uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase);
+}
 
 
