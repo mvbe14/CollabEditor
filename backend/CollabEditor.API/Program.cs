@@ -1,4 +1,4 @@
-using CollabEditor.API.Data;
+﻿using CollabEditor.API.Data;
 using CollabEditor.API.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -84,7 +84,12 @@ app.UseCors(ReactCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapGet("/", () => "CollabEditor API is running");
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+
 app.MapControllers();
 app.MapHub<DocumentHub>("/hubs/document");
 
 app.Run();
+
+
