@@ -2,6 +2,10 @@
 
 Collab Editor is a coursework project for a real-time collaborative document editing system. It has an ASP.NET Core backend and a React frontend prepared for document collaboration features.
 
+
+YOU CAN OPEN IT HERE https://collab-editor-ej2ifpji0-vitalii-s-projects10.vercel.app/
+
+
 ## Technologies
 
 - ASP.NET Core
